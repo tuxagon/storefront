@@ -10,3 +10,5 @@
 
 /api/v1/products ProductListR GET
 /api/v1/products/#ProductId ProductDetailsR GET
+
+/api/graphql GraphqlR POST
