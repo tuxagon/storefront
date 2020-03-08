@@ -7,7 +7,6 @@ module Handler.Home where
 
 import Import
 import Yesod.Form.Bootstrap3 (BootstrapFormLayout (..), renderBootstrap3)
-import Text.Julius (RawJS (..))
 
 -- Define our data that will be used for creating the form.
 data FileForm = FileForm
@@ -23,15 +22,8 @@ data FileForm = FileForm
 -- functions. You can spread them across multiple files if you are so
 -- inclined, or create a single monolithic file.
 getHomeR :: Handler Html
-getHomeR = do
-    (formWidget, formEnctype) <- generateFormPost sampleForm
-    let submission = Nothing :: Maybe FileForm
-        handlerName = "getHomeR" :: Text
-    allComments <- runDB $ getAllComments
-
+getHomeR =
     defaultLayout $ do
-        let (commentFormId, commentTextareaId, commentListId) = commentIds
-        aDomId <- newIdent
         setTitle "Welcome To Yesod!"
         $(widgetFile "homepage")
 
@@ -42,11 +34,7 @@ postHomeR = do
         submission = case result of
             FormSuccess res -> Just res
             _ -> Nothing
-    allComments <- runDB $ getAllComments
-
     defaultLayout $ do
-        let (commentFormId, commentTextareaId, commentListId) = commentIds
-        aDomId <- newIdent
         setTitle "Welcome To Yesod!"
         $(widgetFile "homepage")
 
@@ -65,9 +53,3 @@ sampleForm = renderBootstrap3 BootstrapBasicForm $ FileForm
                 , ("placeholder", "File description")
                 ]
             }
-
-commentIds :: (Text, Text, Text)
-commentIds = ("js-commentForm", "js-createCommentTextarea", "js-commentList")
-
-getAllComments :: DB [Entity Comment]
-getAllComments = selectList [] [Asc CommentId]
