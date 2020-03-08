@@ -1,14 +1,10 @@
 type Query {
-  deity(name: String!): Deity!
+  products: Product!
 }
 
-"""
-Description for Deity
-"""
-type Deity {
-  """
-  Description for name
-  """
+type Product {
   name: String!
-  power: String @deprecated(reason: "some reason for")
+  price: Int!
+  quantity: Int!
+  source: String
 }

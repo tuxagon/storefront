@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -11,36 +12,48 @@
 
 module Handler.Graphql where
 
-import Import hiding (Query)
+import Import
 
 import qualified Data.ByteString.Lazy.Char8 as B
 
-import Data.Aeson (withObject)
+import Data.Aeson (encode)
 import Data.Morpheus (interpreter)
 import Data.Morpheus.Document (importGQLDocumentWithNamespace)
-import Data.Morpheus.Types as MT (GQLRootResolver (..), GQLRequest, GQLResponse, IORes, Undefined(..))
+import Data.Morpheus.Types as MT (GQLRootResolver (..), GQLRequest, GQLResponse, GQLType, IORes, Undefined(..))
+import Yesod.Core.Types (JSONResponse(..))
 
-importGQLDocumentWithNamespace "config/schema.graphql"
+newtype QueryG m = QueryG
+  { products :: m ProductG
+  } deriving (Generic, GQLType)
 
-rootResolver :: GQLRootResolver IO () Query Undefined Undefined
+data ProductG = ProductG
+  { name :: Text
+  , price :: Int
+  , quantity :: Int
+  , source :: Maybe Text
+  } deriving (Generic, GQLType)
+
+rootResolver :: GQLRootResolver IO () QueryG Undefined Undefined
 rootResolver =
   GQLRootResolver
-    { queryResolver = Query {queryDeity}
+    { queryResolver = QueryG {products = queryProducts}
     , mutationResolver = Undefined
     , subscriptionResolver = Undefined
     }
   where
-    queryDeity QueryDeityArgs {queryDeityArgsName} = pure Deity
-      { deityName = pure "Morpheus"
-      , deityPower = pure (Just "Shapeshifting")
+    queryProducts = pure ProductG
+      { name = "Vocal Modulator"
+      , price = 125
+      , quantity = 2
+      , source = Just "http://aonsrd.com/Cybernetics.aspx?ItemName=Vocal%20Modulator&Family=None"
       }
 
 graphqlApi :: GQLRequest -> IO GQLResponse
 graphqlApi =
   interpreter rootResolver
 
-postGraphqlR :: Handler Value
+postGraphqlR :: Handler (JSONResponse GQLResponse)
 postGraphqlR = do
   body <- requireCheckJsonBody :: Handler GQLRequest
   result <- (liftIO . graphqlApi) body
-  returnJson result
+  return $ JSONResponse result
